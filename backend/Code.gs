@@ -1,19 +1,19 @@
 /**
- * Pumpkin Reckoning — vote store (Google Apps Script web app).
+ * Nothing Pumpkin Competition — voting page and vote store (Google Apps Script web app).
  *
- * Setup (about 2 minutes):
- *   1. Go to https://script.google.com → New project, paste this whole file over Code.gs, save.
+ * The project has two files: this one (Code.gs) and Index.html (the voting page).
+ * Setup:
+ *   1. Pick "setup" in the function menu and press Run; allow the permissions it asks for.
  *   2. Deploy → New deployment → type "Web app".
- *      Execute as: Me.   Who has access: Anyone.
- *   3. Authorise when asked, then copy the Web app URL (ends in /exec) into config.js on the site.
+ *      Execute as: Me.   Who has access: Anyone within Nothing Technology Limited.
+ *   3. Share the Web app URL (ends in /exec), or point the GitHub Pages site at it.
  *
- * On the first vote it creates a Google Sheet called "Pumpkin Votes" in your Drive.
- * Every ballot is one row; voting again with the same name replaces that person's row.
- * Tallies are only returned to the site once the deadline has passed.
+ * Voters are identified by their Nothing Google account, so it's one vote each automatically;
+ * voting again replaces their earlier vote. Votes go into a Google Sheet called "Pumpkin Votes".
+ * Tallies are only sent to the page once the deadline has passed.
  *
  * Results email: a few minutes after the deadline, the winners and full table are emailed to
- * RESULTS_EMAIL. The timer is set up automatically on the first visit to the site. To check it
- * works, pick sendResultsEmail in the editor's function menu and press Run (it sends the current tally).
+ * RESULTS_EMAIL. To preview it, pick sendResultsEmail in the function menu and press Run.
  */
 
 const DEADLINE = new Date('2026-11-05T23:59:59Z'); // Thursday 5 November, 23:59 UK time (GMT)
@@ -25,56 +25,63 @@ const NAMES = [
   'Hollow-Eyed Hector', 'The AI Apparition', 'The KPI Horror', 'The Spewing Creature',
   'Itsy Bitsy', 'The Fanged Fiend', 'Weeping Wanda', 'Tongue-Tied Terror',
   'Spiral-Eyed Specter', 'Classic Jack', 'The Lark Facepalm', 'Cyclops Lashes',
-  'Sully Wazowski', 'Gap-Toothed Grinner', 'TARS from Interstellar', 'The Gnarled Goblin', 'The Bauhaus Grin'
+  'Sully Wazowski', 'Gap-Toothed Grinner', 'TARS from Interstellar', 'The Gnarled Goblin', 'The Classic Grinner'
 ];
 
-function doGet(e) {
+function doGet() {
   ensureResultsTrigger_();
-  return json_(status_());
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('Nothing Pumpkin Competition')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
 }
 
-function doPost(e) {
+// Called from the page: who is voting, how many votes so far, their current vote, and results once closed.
+function getState() {
+  const email = voter_();
+  const rows = sheet_().getDataRange().getValues().slice(1);
+  const closed = new Date() > DEADLINE;
+  const mineRow = rows.find(r => String(r[1]).toLowerCase() === email);
+  const out = {
+    email: email,
+    count: rows.length,
+    closed: closed,
+    mine: mineRow ? { first: Number(mineRow[2]), second: Number(mineRow[3]), third: Number(mineRow[4]) } : null
+  };
+  if (closed) out.results = tally_(rows);
+  return out;
+}
+
+// Called from the page when someone hits Vote.
+function submitVote(v) {
+  const email = voter_();
+  if (!email) throw new Error('Please sign in with your Nothing Google account to vote.');
+  if (new Date() > DEADLINE) throw new Error('Voting has closed.');
+  const picks = [v && v.first, v && v.second, v && v.third].map(Number);
+  if (!picks.every(n => Number.isInteger(n) && n >= 1 && n <= PUMPKIN_COUNT)) {
+    throw new Error('Pick a pumpkin for 1st, 2nd and 3rd.');
+  }
+  if (new Set(picks).size !== 3) throw new Error('Your three picks must be different pumpkins.');
+
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    if (new Date() > DEADLINE) return json_({ ok: false, error: 'Voting has closed.' });
-
-    const body = JSON.parse((e.postData && e.postData.contents) || '{}');
-    const name = String(body.name || '').trim().replace(/\s+/g, ' ').slice(0, 60);
-    const picks = [body.first, body.second, body.third].map(Number);
-
-    if (name.length < 2) return json_({ ok: false, error: 'Please tell us your name.' });
-    if (!picks.every(n => Number.isInteger(n) && n >= 1 && n <= PUMPKIN_COUNT)) {
-      return json_({ ok: false, error: 'Pick a pumpkin for 1st, 2nd and 3rd.' });
-    }
-    if (new Set(picks).size !== 3) return json_({ ok: false, error: 'Your three picks must be different pumpkins.' });
-
     const sheet = sheet_();
-    const key = name.toLowerCase();
     const rows = sheet.getDataRange().getValues();
     let rowIndex = -1;
     for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][1]).toLowerCase() === key) { rowIndex = i + 1; break; }
+      if (String(rows[i][1]).toLowerCase() === email) { rowIndex = i + 1; break; }
     }
-    const row = [new Date(), name, picks[0], picks[1], picks[2]];
+    const row = [new Date(), email, picks[0], picks[1], picks[2]];
     if (rowIndex > 0) sheet.getRange(rowIndex, 1, 1, row.length).setValues([row]);
     else sheet.appendRow(row);
-
-    return json_({ ok: true, updated: rowIndex > 0, count: Math.max(sheet.getLastRow() - 1, 0) });
-  } catch (err) {
-    return json_({ ok: false, error: 'Something went bump in the night. Please try again.' });
+    return { updated: rowIndex > 0, count: Math.max(sheet.getLastRow() - 1, 0) };
   } finally {
     lock.releaseLock();
   }
 }
 
-function status_() {
-  const sheet = sheet_();
-  const rows = sheet.getDataRange().getValues().slice(1);
-  const closed = new Date() > DEADLINE;
-  const out = { ok: true, count: rows.length, closed: closed, deadline: DEADLINE.toISOString() };
-  if (closed) out.results = tally_(rows);
-  return out;
+function voter_() {
+  return String(Session.getActiveUser().getEmail() || '').toLowerCase();
 }
 
 function tally_(rows) {
@@ -132,6 +139,12 @@ function ensureResultsTrigger_() {
   }
 }
 
+// Run once from the editor: asks for permissions, creates the sheet and sets the results-email timer.
+function setup() {
+  sheet_();
+  ensureResultsTrigger_();
+}
+
 function sheet_() {
   const props = PropertiesService.getScriptProperties();
   let id = props.getProperty('SHEET_ID');
@@ -140,11 +153,7 @@ function sheet_() {
   else {
     ss = SpreadsheetApp.create('Pumpkin Votes');
     props.setProperty('SHEET_ID', ss.getId());
-    ss.getSheets()[0].appendRow(['Time', 'Name', '1st (3 pts)', '2nd (2 pts)', '3rd (1 pt)']);
+    ss.getSheets()[0].appendRow(['Time', 'Voter', '1st (3 pts)', '2nd (2 pts)', '3rd (1 pt)']);
   }
   return ss.getSheets()[0];
-}
-
-function json_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
