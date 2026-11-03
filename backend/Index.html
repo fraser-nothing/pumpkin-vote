@@ -33,6 +33,21 @@ body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
 body::after{content:"";position:fixed;left:0;right:0;bottom:-30vh;height:60vh;z-index:0;pointer-events:none;
   background:radial-gradient(ellipse 60% 50% at 50% 100%,rgba(255,106,0,.16),transparent 70%);animation:ember 7s ease-in-out infinite}
 @keyframes ember{0%,100%{opacity:.7}50%{opacity:1}}
+#fog{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+#fog i{position:absolute;left:-50%;width:200%;height:45vh;bottom:-12vh;filter:blur(28px);opacity:.42;
+  background:radial-gradient(ellipse 16% 45% at 12% 60%,rgba(190,180,200,.16),transparent 70%),
+             radial-gradient(ellipse 20% 40% at 42% 55%,rgba(170,160,185,.13),transparent 70%),
+             radial-gradient(ellipse 18% 50% at 72% 65%,rgba(190,180,200,.15),transparent 70%),
+             radial-gradient(ellipse 14% 40% at 92% 55%,rgba(170,160,185,.12),transparent 70%);
+  animation:drift 70s linear infinite}
+#fog i:nth-child(2){bottom:auto;top:30vh;opacity:.18;animation-duration:110s;animation-direction:reverse}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(25%)}}
+#vignette{position:fixed;inset:0;z-index:3;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 45%,transparent 55%,rgba(0,0,0,.55))}
+#smoke{position:fixed;inset:0;width:100%;height:100%;z-index:28;pointer-events:none}
+#bats{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.bat{position:absolute;top:0;left:0;width:34px;color:#050505;filter:drop-shadow(0 0 5px rgba(255,106,0,.35))}
+.bat svg{width:100%;display:block;animation:flap .16s ease-in-out infinite alternate}
+@keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(.35)}}
 
 /* ---------- header ---------- */
 header{padding:44px 0 22px;text-align:center}
@@ -177,17 +192,21 @@ body.closed #tray{display:none}
   .tray-form{flex-basis:100%}
   .slot{width:46px;height:46px}
 }
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}#smoke,#bats{display:none}}
 </style>
 </head>
 <body>
+<div id="fog" aria-hidden="true"><i></i><i></i></div>
+<div id="vignette" aria-hidden="true"></div>
+<div id="bats" aria-hidden="true"></div>
+<canvas id="smoke" aria-hidden="true"></canvas>
 <button id="snd" type="button" aria-pressed="false"><i class="eq"><b></b><b></b><b></b></i><span>Tap for sound</span></button>
 
 <header>
   <div class="wrap">
     <svg id="logo" role="img" aria-label="Nothing"></svg>
     <p class="title rise" style="--t:.45s">Pumpkin Competition</p>
-    <p class="lede rise" style="--t:.55s">Vote for your three favourite pumpkins from carving night.</p>
+    <p class="lede rise" style="--t:.55s">Twenty-one pumpkins were carved. Only three will be crowned.</p>
     <p class="meta rise" style="--t:.65s" id="meta">Closes <b>Thursday 5 November, 23:59</b> · <span class="cd" id="cd"></span> left<span id="turnout"></span></p>
     <ul class="how rise" style="--t:.72s">
       <li><span class="medal first">1st</span>3 pts</li>
@@ -500,15 +519,78 @@ body.closed #tray{display:none}
     });
   }
 
+  /* ---------- spooky extras ---------- */
+  if (!reduce) {
+    // A few logo dots fail like dying bulbs now and then.
+    setTimeout(function flicker() {
+      for (let i = 0, n = 1 + Math.floor(Math.random() * 3); i < n; i++) {
+        const d = dots[Math.floor(Math.random() * dots.length)].c;
+        d.classList.remove('on');
+        setTimeout(() => d.classList.add('on'), 70 + Math.random() * 220);
+      }
+      setTimeout(flicker, 1800 + Math.random() * 3500);
+    }, 3000);
+
+    // The odd bat crossing the top of the page.
+    const BAT = '<svg viewBox="0 0 64 28" fill="currentColor"><path d="M32 8c-2-5-1-7 0-8 1 1 2 3 2 5l2-3c1 2 0 5-1 7 6-6 15-8 29-3-6 1-9 4-10 9-3-3-7-3-9 1-2-3-5-3-7 0-1 4-3 7-5 10-2-3-4-6-5-10-2-3-5-3-7 0-2-4-6-4-9-1-1-5-4-8-10-9 14-5 23-3 29 3-1-2-2-5-1-7l2 3c0-2 1-4 2-5z"/></svg>';
+    function bat() {
+      if (document.hidden) return;
+      const b = document.createElement('div'), s = .6 + Math.random() * .7, ltr = Math.random() > .5;
+      const y0 = 20 + Math.random() * innerHeight * .35, y1 = y0 + (Math.random() - .5) * 160;
+      const x0 = ltr ? -60 : innerWidth + 60, x1 = ltr ? innerWidth + 60 : -60;
+      b.className = 'bat'; b.innerHTML = BAT; $('bats').appendChild(b);
+      b.animate([
+        { transform: `translate(${x0}px,${y0}px) scale(${s})` },
+        { transform: `translate(${(x0 + x1) / 2}px,${(y0 + y1) / 2 - 60}px) scale(${s})` },
+        { transform: `translate(${x1}px,${y1}px) scale(${s})` }
+      ], { duration: 6000 + Math.random() * 4000, easing: 'ease-in-out' }).onfinish = () => b.remove();
+    }
+    setTimeout(bat, 2500);
+    setInterval(() => { if (Math.random() < .5) bat(); }, 9000);
+
+    // Smoke that trails the cursor (or a finger) and curls away.
+    const cv = $('smoke'), cx = cv.getContext('2d'), puffs = [];
+    let running = false, last = null;
+    const fit = () => { const r = devicePixelRatio || 1; cv.width = innerWidth * r; cv.height = innerHeight * r; cx.setTransform(r, 0, 0, r, 0, 0); };
+    fit(); addEventListener('resize', fit);
+    addEventListener('pointermove', e => {
+      const dx = last ? e.clientX - last.x : 0, dy = last ? e.clientY - last.y : 0;
+      last = { x: e.clientX, y: e.clientY };
+      const n = Math.min(3, 1 + Math.floor(Math.hypot(dx, dy) / 14));
+      for (let i = 0; i < n && puffs.length < 180; i++) {
+        puffs.push({
+          x: e.clientX - dx * i / n + (Math.random() - .5) * 6, y: e.clientY - dy * i / n + (Math.random() - .5) * 6,
+          vx: (Math.random() - .5) * .5 - dx * .015, vy: -.35 - Math.random() * .5,
+          r: 5 + Math.random() * 6, t: 0, life: 60 + Math.random() * 60, seed: Math.random() * 6.28, warm: Math.random() < .3
+        });
+      }
+      if (!running) { running = true; requestAnimationFrame(draw); }
+    }, { passive: true });
+    function draw() {
+      cx.clearRect(0, 0, innerWidth, innerHeight);
+      for (let i = puffs.length - 1; i >= 0; i--) {
+        const p = puffs[i];
+        p.t++; p.x += p.vx + Math.sin(p.t * .05 + p.seed) * .35; p.y += p.vy; p.r += .38; p.vx *= .985;
+        const a = Math.sin(Math.PI * Math.min(1, p.t / p.life)) * .16;
+        if (p.t >= p.life) { puffs.splice(i, 1); continue; }
+        const g = cx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+        g.addColorStop(0, p.warm ? `rgba(255,130,50,${a})` : `rgba(205,198,215,${a})`);
+        g.addColorStop(1, 'rgba(205,198,215,0)');
+        cx.fillStyle = g; cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 6.283); cx.fill();
+      }
+      if (puffs.length) requestAnimationFrame(draw); else { running = false; cx.clearRect(0, 0, innerWidth, innerHeight); }
+    }
+  }
+
   /* ---------- backing track ---------- */
   // Generated live with Web Audio (drone, wind and a music-box lullaby), so there's no file to license or load.
   const snd = $('snd');
   let audio = null, soundOn = store.get('sound', true);
   function setSndUI() {
-    const on = !!(audio && audio.playing);
+    const on = !!(audio && audio.playing && audio.running());
     snd.classList.toggle('on', on);
     snd.setAttribute('aria-pressed', on);
-    snd.querySelector('span').textContent = on ? 'Sound on' : audio ? 'Sound off' : 'Tap for sound';
+    snd.querySelector('span').textContent = on ? 'Sound on' : soundOn ? 'Tap for sound' : 'Sound off';
   }
   function makeAudio() {
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -570,24 +652,28 @@ body.closed #tray{display:none}
 
     return {
       playing: false,
-      play() { ctx.resume(); next = Math.max(next, ctx.currentTime + .2); master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(.55, ctx.currentTime, 1.5); this.playing = true; },
+      play() { next = Math.max(next, ctx.currentTime + .2); master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(.22, ctx.currentTime, 2); this.playing = true; return ctx.resume(); },
+      running() { return ctx.state === 'running'; },
       pause() { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(0, ctx.currentTime, .2); this.playing = false; setTimeout(() => { if (!this.playing) ctx.suspend(); }, 1200); }
     };
   }
   function startSound() {
     if (!audio) audio = makeAudio();
-    if (audio) audio.play();
+    if (audio) Promise.resolve(audio.play()).catch(() => {}).then(setSndUI);
     setSndUI();
   }
   snd.addEventListener('click', () => {
-    if (audio && audio.playing) { audio.pause(); soundOn = false; } else { startSound(); soundOn = true; }
+    if (audio && audio.playing && audio.running()) { audio.pause(); soundOn = false; } else { soundOn = true; startSound(); }
     store.set('sound', soundOn);
     setSndUI();
   });
-  // Browsers only allow sound after a tap, so it starts on the first one anywhere on the page.
-  addEventListener('pointerdown', e => {
-    if (soundOn && !audio && !snd.contains(e.target)) startSound();
-  }, { capture: true });
+  // Try to start quietly straight away. Most browsers hold sound back until the first tap or key press,
+  // so if it didn't start, the first one anywhere on the page starts it.
+  if (soundOn) startSound();
+  const kick = e => {
+    if (soundOn && !snd.contains(e.target) && !(audio && audio.playing && audio.running())) startSound();
+  };
+  ['pointerdown', 'keydown', 'touchstart'].forEach(t => addEventListener(t, kick, { capture: true, passive: true }));
   document.addEventListener('visibilitychange', () => {
     if (!audio) return;
     if (document.hidden && audio.playing) { audio.pause(); audio.resumeLater = true; }
