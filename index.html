@@ -17,7 +17,7 @@ body{display:grid;place-items:center;text-align:center;overflow:hidden}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;
   background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.5px);background-size:22px 22px;
   -webkit-mask-image:radial-gradient(circle at 50% 45%,#000,transparent 70%);mask-image:radial-gradient(circle at 50% 45%,#000,transparent 70%)}
-svg{width:min(420px,80vw);height:auto;overflow:visible}
+svg{width:min(460px,84vw);height:auto;overflow:visible}
 circle{fill:#ff6a00;opacity:.12;transition:opacity .25s}
 circle.on{opacity:1;filter:drop-shadow(0 0 4px rgba(255,106,0,.7))}
 p{margin:18px 0 0;color:#8c8c8c;letter-spacing:.04em}
@@ -48,11 +48,11 @@ a.show{opacity:1}
     [0,3,4,6,10,14,18,22,25,28,31,32,34,38],
     [0,4,7,8,9,14,18,22,24,25,26,28,32,35,36,37]
   ];
-  const svg = document.getElementById('logo'), S = 10;
-  svg.setAttribute('viewBox', `0 0 ${39 * S} ${5 * S}`);
+  const svg = document.getElementById('logo'), S = 10, R = 15, D = 5.1; // column pitch, row pitch, dot radius
+  svg.setAttribute('viewBox', `0 0 ${39 * S} ${4 * R + 2 * D}`);
   LOGO.forEach((row, y) => row.forEach(x => {
     const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    c.setAttribute('cx', x * S + S / 2); c.setAttribute('cy', y * S + S / 2); c.setAttribute('r', S * .45);
+    c.setAttribute('cx', x * S + S / 2); c.setAttribute('cy', y * R + D); c.setAttribute('r', D);
     svg.appendChild(c);
     setTimeout(() => c.classList.add('on'), 60 + x * 22);
   }));
