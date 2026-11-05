@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nothing Pumpkin Competition</title>
-<meta name="description" content="Pick your top 3 pumpkins. Voting closes 23:59, Thursday 5 November.">
+<meta name="description" content="Pick your top 3 pumpkins. Voting closes 4pm today, Thursday 5 November.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎃</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -207,7 +207,7 @@ body.closed #tray{display:none}
     <svg id="logo" role="img" aria-label="Nothing"></svg>
     <p class="title rise" style="--t:.45s">Pumpkin Competition</p>
     <p class="lede rise" style="--t:.55s">Twenty-one pumpkins were carved. Only three will be crowned.</p>
-    <p class="meta rise" style="--t:.65s" id="meta">Closes <b>Thursday 5 November, 23:59</b> · <span class="cd" id="cd"></span> left<span id="turnout"></span></p>
+    <p class="meta rise" style="--t:.65s" id="meta">Closes <b>today at 4pm</b> · <span class="cd" id="cd"></span> left<span id="turnout"></span></p>
     <ul class="how rise" style="--t:.72s">
       <li><span class="medal first">1st</span>3 pts</li>
       <li><span class="medal second">2nd</span>2 pts</li>
@@ -259,7 +259,7 @@ body.closed #tray{display:none}
   <div>
     <div class="big">🎃</div>
     <h3 id="sealed-h">Vote saved</h3>
-    <p id="sealed-p">Thanks for voting! The winners are revealed here after 23:59 on Thursday 5 November.</p>
+    <p id="sealed-p">Thanks for voting! The winners are revealed here after 4pm today.</p>
     <button id="sealed-ok">Done</button>
   </div>
 </div>
@@ -269,7 +269,7 @@ body.closed #tray{display:none}
   const SITE = 'https://fraser-nothing.github.io/pumpkin-vote/';
   const call = (fn, ...args) => new Promise((resolve, reject) =>
     google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](...args));
-  const DEADLINE = new Date('2026-11-05T23:59:59Z');
+  const DEADLINE = new Date('2026-11-05T16:00:00Z');
   const NAMES = [
     'The Squinting Sentinel','Baby Frankenstein','Knife-Mouth Mortimer','The Cat-o’-Lantern',
     'Hollow-Eyed Hector','The AI Apparition','The KPI Horror','The Spewing Creature',
@@ -451,7 +451,7 @@ body.closed #tray{display:none}
       $('sealed-h').textContent = data.updated ? 'Vote updated' : 'Vote saved';
       $('sealed').classList.add('show');
       $('sealed-ok').focus();
-      setMsg('✓ Vote saved. You can change it any time before Thursday 23:59.', 'ok');
+      setMsg('✓ Vote saved. You can change it any time before 4pm today.', 'ok');
     } catch (err) {
       setMsg((err && err.message) || 'Couldn’t save your vote. Please try again.', 'err');
     } finally {

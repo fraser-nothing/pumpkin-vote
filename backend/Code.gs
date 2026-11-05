@@ -16,7 +16,7 @@
  * RESULTS_EMAIL. To preview it, pick sendResultsEmail in the function menu and press Run.
  */
 
-const DEADLINE = new Date('2026-11-05T23:59:59Z'); // Thursday 5 November, 23:59 UK time (GMT)
+const DEADLINE = new Date('2026-11-05T16:00:00Z'); // Thursday 5 November, 4pm UK time (GMT)
 const RESULTS_EMAIL = 'fraser.stone@nothing.tech';
 const PUMPKIN_COUNT = 21;
 const POINTS = { first: 3, second: 2, third: 1 };
@@ -139,9 +139,14 @@ function ensureResultsTrigger_() {
   }
 }
 
-// Run once from the editor: asks for permissions, creates the sheet and sets the results-email timer.
+// Run from the editor: asks for permissions, creates the sheet and (re)sets the results-email timer.
+// Safe to run again after changing DEADLINE: it replaces any old timer and leaves the votes alone.
 function setup() {
   sheet_();
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'sendResultsEmail')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  PropertiesService.getScriptProperties().deleteProperty('RESULTS_TRIGGER');
   ensureResultsTrigger_();
 }
 
