@@ -172,7 +172,8 @@ body.closed #tray{display:none}
 .pod .place{font-weight:700;font-size:24px;line-height:1}
 .pod.r1 .place{color:var(--gold)}.pod.r2 .place{color:var(--silver)}.pod.r3 .place{color:var(--bronze)}
 .pod .who{font-size:14px;font-weight:500}
-.pod .score{color:var(--muted);font-size:12px}
+.pod .by{font-size:13px;color:var(--orange,#ff6a00);margin-top:3px}
+.pod .score{color:var(--muted);font-size:12px;margin-top:3px}
 .board{width:100%;border-collapse:collapse;max-width:680px;margin:0 auto;font-size:14px}
 .board th,.board td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
 .board th{color:var(--muted);font-weight:500}
@@ -277,6 +278,8 @@ body.closed #tray{display:none}
     'Spiral-Eyed Specter','Classic Jack','The Lark Facepalm','Cyclops Lashes',
     'Sully Wazowski','Gap-Toothed Grinner','TARS from Interstellar','The Gnarled Goblin','The Classic Grinner'
   ];
+  // Who carved the winners, by pumpkin number. Shown with the results.
+  const CARVERS = { 3: 'Ben Sammut', 20: 'Hunaid Nagaria', 16: 'Hannah Daled' };
   const P = NAMES.map((name, i) => {
     const n = i + 1, f = 'pumpkin-' + String(n).padStart(2, '0') + '.jpg';
     return { n, name, full: SITE + 'photos/' + f, thumb: SITE + 'photos/thumbs/' + f };
@@ -501,10 +504,11 @@ body.closed #tray{display:none}
       const p = P[r.n - 1], el = document.createElement('div');
       el.className = 'pod r' + (i + 1);
       el.innerHTML = '<div class="pic"><img alt=""></div><div class="blk"><div class="place">' + PLACES[i].label +
-        '</div><div class="who"></div><div class="score"></div></div>';
+        '</div><div class="who"></div><div class="by"></div><div class="score"></div></div>';
       el.querySelector('img').src = p.thumb;
       el.querySelector('img').alt = p.name;
       el.querySelector('.who').textContent = p.name;
+      el.querySelector('.by').textContent = CARVERS[r.n] ? 'Carved by ' + CARVERS[r.n] : '';
       el.querySelector('.score').textContent = r.points + ' pts · ' + r.first + ' first-place vote' + (r.first === 1 ? '' : 's');
       pod.appendChild(el);
     });
@@ -512,7 +516,7 @@ body.closed #tray{display:none}
     t.innerHTML = '<thead><tr><th>#</th><th>Pumpkin</th><th class="n">Pts</th><th class="n">1st</th><th class="n">2nd</th><th class="n">3rd</th></tr></thead><tbody></tbody>';
     res.forEach((r, i) => {
       const tr = document.createElement('tr');
-      [i + 1, P[r.n - 1].name, r.points, r.first, r.second, r.third].forEach((v, j) => {
+      [i + 1, P[r.n - 1].name + (CARVERS[r.n] ? ' · ' + CARVERS[r.n] : ''), r.points, r.first, r.second, r.third].forEach((v, j) => {
         const td = document.createElement('td'); td.textContent = v; if (j > 1) td.className = 'n'; tr.appendChild(td);
       });
       t.tBodies[0].appendChild(tr);

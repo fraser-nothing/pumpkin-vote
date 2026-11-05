@@ -28,6 +28,8 @@ const NAMES = [
   'Sully Wazowski', 'Gap-Toothed Grinner', 'TARS from Interstellar', 'The Gnarled Goblin', 'The Classic Grinner'
 ];
 
+const CARVERS = { 3: 'Ben Sammut', 20: 'Hunaid Nagaria', 16: 'Hannah Daled' };
+
 function doGet() {
   ensureResultsTrigger_();
   return HtmlService.createHtmlOutputFromFile('Index')
@@ -102,7 +104,7 @@ function sendResultsEmail() {
   const sheet = sheet_();
   const rows = sheet.getDataRange().getValues().slice(1);
   const res = tally_(rows);
-  const label = r => 'No. ' + r.n + ' · ' + NAMES[r.n - 1];
+  const label = r => 'No. ' + r.n + ' · ' + NAMES[r.n - 1] + (CARVERS[r.n] ? ' (carved by ' + CARVERS[r.n] + ')' : '');
   const final = new Date() > DEADLINE;
 
   const podium = ['1st', '2nd', '3rd'].map((place, i) =>
